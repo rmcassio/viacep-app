@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:via_cep_app/api_cep.dart';
+import 'package:via_cep_app/api_endereco.dart';
+import 'package:via_cep_app/endereco.dart';
 
 enum EscolherOpcao { cep, endereco }
 
@@ -14,64 +17,17 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+TextEditingController txtcep = TextEditingController();
+TextEditingController txtendereco = TextEditingController();
+TextEditingController txtuf = TextEditingController();
+TextEditingController txtcidade = TextEditingController();
+
 class _MyHomePageState extends State<MyHomePage> {
   EscolherOpcao? _opcao;
   bool _enderecoSelected = false;
-  TextEditingController txtendereco = TextEditingController();
-  TextEditingController txtuf = TextEditingController();
-  TextEditingController txtcidade = TextEditingController();
-  TextEditingController txtcep = TextEditingController();
-  late String resultadoEndereco;
-  late String resultado;
 
-  Future<void> consultaCep() async {
-    String cepValue = txtcep.text;
-
-    String url = 'http://viacep.com.br/ws/${cepValue}/json/';
-
-    http.Response response;
-
-    response = await http.get(Uri.parse(url));
-
-    Map<String, dynamic> retorno = json.decode(response.body);
-
-    String uf = retorno["uf"];
-    String cidade = retorno["localidade"];
-
-    String endereco = "O endereço é ${uf}, ${cidade}";
-
-    setState(() {
-      resultado = endereco;
-      print(resultado);
-    });
-  }
-
-  Future<void> consultaEndereco() async {
-    String ufValue = txtuf.text.toUpperCase();
-    String cidadeValue = txtcidade.text.toLowerCase();
-    String enderecoValue = txtendereco.text.toLowerCase();
-    String url =
-        'http://viacep.com.br/ws/${ufValue}/${cidadeValue}/${enderecoValue}/json/';
-
-    http.Response response;
-
-    response = await http.get(Uri.parse(url));
-
-    Map<String, dynamic> retorno = json.decode(response.body);
-
-    String uf1 = retorno["uf"];
-    String cidade1 = retorno["localidade"];
-    String cep1 = retorno["cep"];
-    String logradouro1 = retorno["logradouro"];
-
-    String endereco =
-        "O endereço é ${uf1}, ${cidade1}, ${cep1}, ${logradouro1}";
-
-    setState(() {
-      resultadoEndereco = endereco;
-      print(resultadoEndereco);
-    });
-  }
+  Future<Endereco> futureCep;
+  late Future<Endereco> futureEndereco;
 
   void handleSelection(EscolherOpcao? value) {
     setState(() {
@@ -81,14 +37,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    futureCep = getCep();
+    futureEndereco = getEndereco();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
+      body: Container(
+        padding: EdgeInsets.all(15),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             RadioListTile(
               title: const Text('Consulta por CEP'),
@@ -96,58 +60,87 @@ class _MyHomePageState extends State<MyHomePage> {
               groupValue: _opcao,
               onChanged: handleSelection,
             ),
-            if (!_enderecoSelected)
-              TextFormField(
-                controller: txtcep,
-                keyboardType: TextInputType.numberWithOptions(),
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Digite seu CEP',
-                ),
-              ),
             RadioListTile(
               title: const Text('Consulta por Endereço'),
               value: EscolherOpcao.endereco,
               groupValue: _opcao,
               onChanged: handleSelection,
             ),
-            if (_enderecoSelected)
-              Column(
-                children: <Widget>[
-                  TextFormField(
-                    controller: txtuf,
+            !_enderecoSelected
+                ? TextField(
+                    controller: txtcep,
+                    keyboardType: const TextInputType.numberWithOptions(),
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'Digite seu Estado',
-                    ),
+                      hintText: 'Digite seu CEP',
+                    ))
+                : Column(
+                    children: <Widget>[
+                      TextField(
+                        controller: txtuf,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Digite seu Estado',
+                        ),
+                      ),
+                      Divider(),
+                      TextField(
+                        controller: txtcidade,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Digite sua Cidade',
+                        ),
+                      ),
+                      const Divider(),
+                      TextField(
+                        controller: txtendereco,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Digite seu Logradouro',
+                        ),
+                      ),
+                    ],
                   ),
-                  Divider(color: Colors.white),
-                  TextFormField(
-                    controller: txtcidade,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Digite sua Cidade',
-                    ),
-                  ),
-                  const Divider(color: Colors.white),
-                  TextFormField(
-                    controller: txtendereco,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Digite seu Logradouro',
-                    ),
-                  ),
-                ],
-              ),
             Divider(),
             !_enderecoSelected
                 ? ElevatedButton(
-                    onPressed: consultaCep,
+                    onPressed: () {},
                     child: const Text('Consultar'),
                   )
                 : ElevatedButton(
-                    onPressed: consultaEndereco,
+                    onPressed: () {},
                     child: const Text('Consultar'),
+                  ),
+            !_enderecoSelected
+                ? Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.all(15),
+                      children: [
+                        Column(
+                          children: const [
+                            Text(
+                              'O resultado do cep será exibido aqui',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                : Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.all(15),
+                      children: [
+                        Column(
+                          children: const [
+                            Text(
+                              'O resultado do endereço será exibido aqui',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
           ],
         ),
