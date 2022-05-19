@@ -3,8 +3,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:via_cep_app/api_cep.dart';
-import 'package:via_cep_app/api_endereco.dart';
 import 'package:via_cep_app/endereco.dart';
 
 enum EscolherOpcao { cep, endereco }
@@ -26,19 +24,22 @@ class _MyHomePageState extends State<MyHomePage> {
   EscolherOpcao? _opcao;
   bool _enderecoSelected = false;
 
-  late Future<Endereco> futureCep;
-  late Future<Endereco> futureEndereco;
+  @override
+  void initState() {
+    super.initState();
+    !_enderecoSelected ? getCep() : getEndereco();
+  }
 
-  Future<Endereco> getCep() async {
+  getCep() async {
+    List<Endereco> myAllData = [];
     String cepValue = txtcep.text;
     String url = 'http://viacep.com.br/ws/$cepValue/json/';
 
     final response = await http.get(Uri.parse(url));
-
     return Endereco.fromJson(jsonDecode(response.body));
   }
 
-  Future<Endereco> getEndereco() async {
+  getEndereco() async {
     String ufValue = txtuf.text.toUpperCase();
     String cidadeValue = txtcidade.text.toLowerCase();
     String enderecoValue = txtendereco.text.toLowerCase();
