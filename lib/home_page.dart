@@ -26,21 +26,34 @@ class _MyHomePageState extends State<MyHomePage> {
   EscolherOpcao? _opcao;
   bool _enderecoSelected = false;
 
-  Future<Endereco> futureCep;
+  late Future<Endereco> futureCep;
   late Future<Endereco> futureEndereco;
+
+  Future<Endereco> getCep() async {
+    String cepValue = txtcep.text;
+    String url = 'http://viacep.com.br/ws/$cepValue/json/';
+
+    final response = await http.get(Uri.parse(url));
+
+    return Endereco.fromJson(jsonDecode(response.body));
+  }
+
+  Future<Endereco> getEndereco() async {
+    String ufValue = txtuf.text.toUpperCase();
+    String cidadeValue = txtcidade.text.toLowerCase();
+    String enderecoValue = txtendereco.text.toLowerCase();
+    String urlEndereco =
+        'http://viacep.com.br/ws/$ufValue/$cidadeValue/$enderecoValue/json/';
+
+    final response = await http.get(Uri.parse(urlEndereco));
+    return Endereco.fromJson(jsonDecode(response.body));
+  }
 
   void handleSelection(EscolherOpcao? value) {
     setState(() {
       _opcao = value;
       _enderecoSelected = value == EscolherOpcao.endereco;
     });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    futureCep = getCep();
-    futureEndereco = getEndereco();
   }
 
   @override
