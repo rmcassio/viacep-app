@@ -37,7 +37,8 @@ class _MyHomePageState extends State<MyHomePage> {
     String url = 'http://viacep.com.br/ws/$cepValue/json/';
     final response = await http.get(Uri.parse(url));
     Endereco.fromJson(jsonDecode(response.body));
-    myAllData.add;
+
+    myAllData.add(Endereco.fromJson(jsonDecode(response.body)));
 
     setState(() {});
   }
@@ -50,10 +51,13 @@ class _MyHomePageState extends State<MyHomePage> {
     String urlEndereco =
         'http://viacep.com.br/ws/$ufValue/$cidadeValue/$enderecoValue/json/';
 
+    List<Endereco> enderecos;
     final response = await http.get(Uri.parse(urlEndereco));
-    Endereco.fromJson(jsonDecode(response.body)) as List;
+    enderecos = (json.decode(response.body) as List)
+        .map((i) => Endereco.fromJson(i))
+        .toList();
 
-    myAllData.add(Endereco.fromJson(jsonDecode(response.body)));
+    myAllData.addAll(enderecos);
 
     setState(() {});
   }
@@ -123,7 +127,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
-            Divider(),
             ElevatedButton(
               onPressed: () => {
                 if (!_enderecoSelected)
@@ -143,8 +146,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 itemBuilder: (context, index) {
                   final Endereco endereco = myAllData[index];
                   return ListTile(
-                    title: Text('${endereco}'),
-                  );
+                      title: Text(_enderecoSelected
+                          ? 'Endereço: ${endereco.logradouro} - Cidade: ${endereco.localidade} - Cep: ${endereco.cep}'
+                          : 'Cidade: ${endereco.localidade} - Cep: ${endereco.cep}'));
                 },
               ),
             ),
