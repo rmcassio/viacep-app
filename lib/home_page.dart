@@ -146,7 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 itemBuilder: (context, index) {
                   final Endereco endereco = myAllData[index];
                   return ListTile(
-                      title: Text(_enderecoSelected
+                      title: Text(endereco.cep != null
                           ? 'Endereço: ${endereco.logradouro} - Cidade: ${endereco.localidade} - Cep: ${endereco.cep}'
                           : 'Cidade: ${endereco.localidade} - Cep: ${endereco.cep}'));
                 },
