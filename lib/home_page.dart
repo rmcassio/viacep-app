@@ -23,6 +23,7 @@ TextEditingController txtcidade = TextEditingController();
 class _MyHomePageState extends State<MyHomePage> {
   EscolherOpcao? _opcao;
   bool _enderecoSelected = false;
+  List<Endereco> myAllData = [];
 
   @override
   void initState() {
@@ -30,16 +31,19 @@ class _MyHomePageState extends State<MyHomePage> {
     !_enderecoSelected ? getCep() : getEndereco();
   }
 
-  getCep() async {
-    List<Endereco> myAllData = [];
+  void getCep() async {
+    myAllData.clear();
     String cepValue = txtcep.text;
     String url = 'http://viacep.com.br/ws/$cepValue/json/';
-
     final response = await http.get(Uri.parse(url));
-    return Endereco.fromJson(jsonDecode(response.body));
+    Endereco.fromJson(jsonDecode(response.body));
+    myAllData.add;
+
+    setState(() {});
   }
 
-  getEndereco() async {
+  void getEndereco() async {
+    myAllData.clear();
     String ufValue = txtuf.text.toUpperCase();
     String cidadeValue = txtcidade.text.toLowerCase();
     String enderecoValue = txtendereco.text.toLowerCase();
@@ -47,7 +51,11 @@ class _MyHomePageState extends State<MyHomePage> {
         'http://viacep.com.br/ws/$ufValue/$cidadeValue/$enderecoValue/json/';
 
     final response = await http.get(Uri.parse(urlEndereco));
-    return Endereco.fromJson(jsonDecode(response.body));
+    Endereco.fromJson(jsonDecode(response.body)) as List;
+
+    myAllData.add(Endereco.fromJson(jsonDecode(response.body)));
+
+    setState(() {});
   }
 
   void handleSelection(EscolherOpcao? value) {
@@ -116,46 +124,30 @@ class _MyHomePageState extends State<MyHomePage> {
                     ],
                   ),
             Divider(),
-            !_enderecoSelected
-                ? ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Consultar'),
-                  )
-                : ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Consultar'),
-                  ),
-            !_enderecoSelected
-                ? Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.all(15),
-                      children: [
-                        Column(
-                          children: const [
-                            Text(
-                              'O resultado do cep será exibido aqui',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                : Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.all(15),
-                      children: [
-                        Column(
-                          children: const [
-                            Text(
-                              'O resultado do endereço será exibido aqui',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+            ElevatedButton(
+              onPressed: () => {
+                if (!_enderecoSelected)
+                  {
+                    getCep(),
+                  }
+                else
+                  {
+                    getEndereco(),
+                  }
+              },
+              child: const Text('Consultar'),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: myAllData.length,
+                itemBuilder: (context, index) {
+                  final Endereco endereco = myAllData[index];
+                  return ListTile(
+                    title: Text('${endereco}'),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
